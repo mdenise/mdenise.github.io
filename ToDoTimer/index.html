@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="img/Icon_Robot.png" />
+
+    <style>
+        .background-dark {
+            background-color: #262626;
+        }
+
+        .center {
+            display: flex;
+            justify-content: center;
+        }
+
+        .margin-top {
+            margin-top: 100px;
+        }
+
+        .timetool{
+            height: 3em;
+            position: center;
+            padding: 10px 10px;
+            font-family: 'Noto Sans', sans-serif;
+            margin-bottom: 10px;
+        }
+
+        .custom-time-input {
+            width: 200px; /* Adjust the width as needed */
+            text-align: center;
+            font-size: 20px;
+            font-family: 'Noto Sans', sans-serif;
+            border: 2px solid #ccc; /* Custom border */
+            border-radius: 20px; /* Rounded corners */
+            box-sizing: border-box; /* Include padding in width */
+            padding: 10px 10px;
+        }
+
+        /* For Webkit browsers (Chrome, Safari) */
+        input[type="time"]::-webkit-inner-spin-button,
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            display: none;
+            -webkit-appearance: none;
+        }
+        
+        /* For Firefox */
+        input[type="time"] {
+            -moz-appearance: textfield; /* Remove default styling */
+        }
+        
+        input[type="time"]::-moz-focus-inner {
+            border: 0;
+        }
+
+
+        .timer {
+            width: 200px;
+            text-align: center;
+            color: black;
+            background-color: white;
+            font-size: 20px;
+            font-family: 'Noto Sans', sans-serif;
+            border: 2px solid #ccc; /* Custom border */
+            border-radius: 20px; /* Rounded corners */
+            box-sizing: border-box; /* Include padding in width */
+            padding: 10px 10px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center; /* Horizontally center */
+            align-items: center; /* Vertically center */
+            margin-bottom: 20px;
+        }
+        
+
+        .tasks {
+            font-size: 15px;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* Dropdown Button */
+        .dropbtn {
+        background-color: #262626;
+        color: white;
+        padding: 16px;
+        font-size: 16px;
+        border: none;
+        }
+
+        /* The container <div> - needed to position the dropdown content */
+        .dropdown {
+        position: relative;
+        display: inline-block;
+        }
+
+        /* Dropdown Content (Hidden by Default) */
+        .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f1f1f1;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        }
+
+        /* Links inside the dropdown */
+        .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        font-family: 'Roboto', sans-serif;
+        display: block;
+        }
+
+        /* Change color of dropdown links on hover */
+        .dropdown-content a:hover {background-color: #ddd;}
+
+        /* Show the dropdown menu on hover */
+        .dropdown:hover .dropdown-content {display: block;}
+
+        /* Change the background color of the dropdown button when the dropdown content is shown
+        .dropdown:hover .dropbtn {background-color: #3e8e41;}*/
+    </style>
+
+    <script>
+        let alarm = new Audio('alarm.mp3');
+        let timerStarted = false;
+        let intervalID= null;
+
+        function resetClock(){
+            document.getElementById("appt").value = '00:00:00';
+        }
+
+        
+        function stopTimer(){
+            timerStarted = false;
+            clearInterval(intervalID);
+
+            timer.innerHTML = '00:00:00';
+            alarm.pause();
+            alarm.currentTime = 0;
+            resetClock();
+            
+            buttonLayoutTimerStopped();
+        }
+
+
+        function buttonLayoutTimerStopped(){
+            document.getElementById("stopButton").style.display = 'none';
+            document.getElementById("startButton").style.display = 'initial';
+            document.getElementById("appt").style.display = 'initial';
+            document.getElementById("timer").style.display = 'none';
+        }
+
+
+        function buttonLayoutTimerStarted(){
+            document.getElementById("startButton").style.display = 'none';
+                document.getElementById("stopButton").style.display = 'initial';
+                document.getElementById("appt").style.display = 'none';
+                document.getElementById("timer").style.display = 'initial';
+                document.getElementById("timer").style = 'timer';
+        }
+
+
+        function calculateTimerTime(hour, min, sec){
+            let timerTime = 0;
+
+            if(sec > 0){
+                    timerTime += 1000 * sec; 
+                }
+
+                if(min > 0){
+                    timerTime += 1000 * 60 * min; 
+                }
+
+                if(hour > 0){
+                    timerTime += 1000 * 60 * 60 * hour; 
+                }
+
+                return timerTime;
+        }
+
+
+        function calculateHour(timeLeft){
+            let hours = timeLeft / (1000 * 60 * 60);
+            hours = Math.floor(hours);
+
+            return hours;
+        }
+
+        function calculateMinute(timeLeft){
+            let minutes = timeLeft / (1000 * 60);
+            minutes = Math.floor(minutes); // round minutes always down
+
+            return minutes;
+        }
+
+
+        function calculateSecond(timeLeft){
+            let seconds = (timeLeft / 1000) % 60;
+            seconds = Math.round(seconds);
+
+            return seconds;
+        }
+
+
+        function startTimer(){
+            if(!timerStarted){
+                buttonLayoutTimerStarted();
+
+                let x = document.getElementById("appt").value;
+                const p = x.split(':');
+                let hour = p[0];
+                let min = p[1];
+                let sec = p[2];
+                
+
+                let timerTime = calculateTimerTime(p[0], p[1], p[2]);
+
+                let startTime = new Date().getTime();
+                let endTime = startTime + timerTime;
+     
+                let text2 = hour + ':' + min + ':' + sec;
+                timer.innerHTML = text2;
+
+                intervalID = setInterval(function(){
+                    let timeLeft = endTime - new Date().getTime();
+
+                    if(timeLeft > 0){
+                        let hours = calculateHour(timeLeft);
+                        timeLeft -= hours * 1000 * 60 * 60;
+                        let minutes = calculateMinute(timeLeft);
+                        let seconds = calculateSecond(timeLeft);
+                        
+
+                        if(seconds == 60){
+                            seconds = 0;
+                            minutes += 1;
+                        }
+
+                        if(minutes == 60){
+                            minutes = 0;
+                            hours += 1;
+                        }
+
+                        seconds = ('0' + seconds).slice(-2);
+
+                        let text = '';
+                        if(hours > 0 && hours < 10){
+                            text += '0' + hours + ':';
+                        }else if(hours > 0 && hours > 9){
+                            text += hours + ':';
+                        }
+                        else{
+                            text += '00:';
+                        }
+
+
+                        if(minutes < 10){
+                            text += '0' + minutes + ':' + seconds;
+                        }else{
+                            text += minutes + ':'  + seconds;
+                        }
+                       
+                        timer.innerHTML = text;
+                    } else{
+                        alarm.play();
+                        timer.innerHTML = '00:00:00';
+
+                        document.getElementById("stopButton").style.display = 'initial';
+                    }
+
+                }, 1000);
+                timerStarted = true;
+            }
+        }
+
+        
+    </script>
+</head>
+
+<body class="background-dark">
+    <div class="dropdown">
+        <button class="dropbtn"><img src="img/menu.png"></button>
+        <div class="dropdown-content">
+            <!--<a href="#" onclick="stopTimer()" src="Timer 1">Timer 1 </a>
+            <a href="#" onclick="stopTimer()" src="Timer 1">Timer 2 </a>-->
+        </div>
+    </div>
+
+    <div class="center margin-top">
+        <img src="img/robot-1470108_640.png" style="width: 300px; height: auto;">
+        <!--img src="img/egg.png">-->
+    </div>
+
+    <div class="container">
+        <input type="time" id="appt" step="2" value="00:05:00" class="custom-time-input"/>
+        <div class="timer" id="timer" style="display: none;">HH:MM:SS</div>
+    </div>  
+
+    <div class="center">
+        <img id="startButton" onclick="startTimer()" src="img/button_start.png" style="width: 150px; height: auto;">
+        <img id="stopButton" onclick="stopTimer()" src="img/button_stop.png" style="width: 150px; height: auto; display: none;">
+    </div>
+
+     <!--<div class="center margin-top tasks">
+        <form action="/action_page.php">
+            <label for="fname">Task 1: </label>
+            <input type="text" id="tasks" name="task1"><br><br>
+           <label for="lname">Task 2: </label>
+            <input type="text" id="tasks" name="task2"><br><br>
+            <label for="lname">Task 3: </label>
+            <input type="text" id="tasks" name="task3"><br><br>
+            <label for="lname">Task 4: </label>
+            <input type="text" id="tasks" name="task4"><br><br>
+            <label for="lname">Task 5: </label>
+            <input type="text" id="tasks" name="task5"><br><br>
+            <input type="button" value="Submit" onclick="">
+          </form>
+    </div> -->
+
+</body>
+</html>
