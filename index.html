@@ -17,6 +17,15 @@
             justify-content: center;
         }
 
+        img{
+            padding: 5px;
+            display: block;
+            height: 40px;
+            width: auto;
+
+        }
+
+
         .margin-top {
             margin-top: 100px;
         }
@@ -131,21 +140,52 @@
     <script>
         let alarm = new Audio('alarm.mp3');
         let timerStarted = false;
+        let timerPaused = false;
         let intervalID= null;
+        let leftTime = 0;
 
-        function resetClock(){
-            document.getElementById("appt").value = '00:00:00';
+
+        function pauseButton(){
+            if(!timerPaused){
+                pauseTimer();
+            }else{
+                resumeTimer();
+            }
+        }
+
+
+        function pauseTimer(){
+            timerStarted = false;
+            timerPaused = true;
+            console.log(leftTime);
+            clearInterval(intervalID);
+        }
+
+        function resumeTimer(){
+            startTimer();
+
+            timerPaused = false;
+        }
+
+
+        function timerStatus(){
+            if(!timerPaused){
+                var time = document.getElementById("appt").value;
+            }else{
+                var time = leftTime;
+            }
+
+            return time;
         }
 
         
         function stopTimer(){
             timerStarted = false;
+            console.log(leftTime);
             clearInterval(intervalID);
 
-            timer.innerHTML = '00:00:00';
             alarm.pause();
             alarm.currentTime = 0;
-            resetClock();
             
             buttonLayoutTimerStopped();
         }
@@ -153,6 +193,7 @@
 
         function buttonLayoutTimerStopped(){
             document.getElementById("stopButton").style.display = 'none';
+            document.getElementById("pauseButton").style.display = 'none';
             document.getElementById("startButton").style.display = 'initial';
             document.getElementById("appt").style.display = 'initial';
             document.getElementById("timer").style.display = 'none';
@@ -161,10 +202,11 @@
 
         function buttonLayoutTimerStarted(){
             document.getElementById("startButton").style.display = 'none';
-                document.getElementById("stopButton").style.display = 'initial';
-                document.getElementById("appt").style.display = 'none';
-                document.getElementById("timer").style.display = 'initial';
-                document.getElementById("timer").style = 'timer';
+            document.getElementById("stopButton").style.display = 'initial';
+            document.getElementById("pauseButton").style.display = 'initial';
+            document.getElementById("appt").style.display = 'none';
+            document.getElementById("timer").style.display = 'initial';                
+            document.getElementById("timer").style = 'timer';
         }
 
 
@@ -214,23 +256,28 @@
             if(!timerStarted){
                 buttonLayoutTimerStarted();
 
-                let x = document.getElementById("appt").value;
-                const p = x.split(':');
-                let hour = p[0];
-                let min = p[1];
-                let sec = p[2];
+                let t = timerStatus();
+                let timerTime = 0;
                 
+                if(!timerPaused){
+                    t = t.split(':');
+                    timerTime = calculateTimerTime(t[0], t[1], t[2]);
+                    let clockText = t[0] + ':' + t[1] + ':' + t[2];
+                    timer.innerHTML = clockText;
+                }else{
+                    timerTime = leftTime;
+                }
 
-                let timerTime = calculateTimerTime(p[0], p[1], p[2]);
+
+               
 
                 let startTime = new Date().getTime();
                 let endTime = startTime + timerTime;
      
-                let text2 = hour + ':' + min + ':' + sec;
-                timer.innerHTML = text2;
 
                 intervalID = setInterval(function(){
                     let timeLeft = endTime - new Date().getTime();
+                    leftTime = timeLeft;
 
                     if(timeLeft > 0){
                         let hours = calculateHour(timeLeft);
@@ -287,7 +334,7 @@
 
 <body class="background-dark">
     <div class="dropdown">
-        <button class="dropbtn"><img src="img/menu.png"></button>
+        <button class="dropbtn"><img src="img/menu.png" style="height: 20px;"></button>
         <div class="dropdown-content">
             <!--<a href="#" onclick="stopTimer()" src="Timer 1">Timer 1 </a>
             <a href="#" onclick="stopTimer()" src="Timer 1">Timer 2 </a>-->
@@ -296,7 +343,6 @@
 
     <div class="center margin-top">
         <img src="img/robot-1470108_640.png" style="width: 300px; height: auto;">
-        <!--img src="img/egg.png">-->
     </div>
 
     <div class="container">
@@ -305,8 +351,9 @@
     </div>  
 
     <div class="center">
-        <img id="startButton" onclick="startTimer()" src="img/button_start.png" style="width: 150px; height: auto;">
-        <img id="stopButton" onclick="stopTimer()" src="img/button_stop.png" style="width: 150px; height: auto; display: none;">
+        <img id="startButton" onclick="startTimer()" src="img/button_start.png">
+        <img id="pauseButton" onclick="pauseButton()" src="img/button_pause.png" style="display: none;">
+        <img id="stopButton" onclick="stopTimer()" src="img/button_stop.png" style="display: none;">
     </div>
 
      <!--<div class="center margin-top tasks">
